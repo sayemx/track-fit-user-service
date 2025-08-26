@@ -10,4 +10,6 @@ public interface UserService {
 	UserResponse register(RegisterRequest request);
 	
 	Boolean existByUserId(String userId);
+
+	Boolean existByKeycloakId(String keycloakId);
 }

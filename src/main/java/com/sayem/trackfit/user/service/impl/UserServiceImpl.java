@@ -43,7 +43,24 @@ public class UserServiceImpl implements UserService {
 		Optional<User> userFound = userRepository.findByEmail(registerRequest.getEmail());
 		
 		if(userFound.isPresent()) {
-			throw new UserAlreadyExistsException(registerRequest.getEmail());
+			// throw new UserAlreadyExistsException(registerRequest.getEmail());
+			// keycloak integration or synchronization
+			
+			User existingUser = userFound.get();
+
+			UserResponse userResponse = new UserResponse();
+			userResponse.setId(existingUser.getId());
+			userResponse.setKeycloakId(existingUser.getKeycloakId());
+			userResponse.setPassword(existingUser.getPassword());
+			userResponse.setEmail(existingUser.getEmail());
+			userResponse.setFirstName(existingUser.getFirstName());
+			userResponse.setLastName(existingUser.getLastName());
+			userResponse.setCreatedAt(existingUser.getCreatedAt());
+			userResponse.setUpdatedAt(existingUser.getUpdatedAt());
+			userResponse.setEmail(existingUser.getEmail());
+
+			return userResponse;
+			
 		}
 		
 		User user = new User();
@@ -51,11 +68,13 @@ public class UserServiceImpl implements UserService {
 		user.setPassword(registerRequest.getPassword());
 		user.setFirstName(registerRequest.getFirstName());
 		user.setLastName(registerRequest.getLastName());
+		user.setKeycloakId(registerRequest.getKeycloakId());
 
 		User savedUser = userRepository.save(user);
 
 		UserResponse userResponse = new UserResponse();
 		userResponse.setId(savedUser.getId());
+		userResponse.setKeycloakId(savedUser.getKeycloakId());
 		userResponse.setPassword(savedUser.getPassword());
 		userResponse.setEmail(savedUser.getEmail());
 		userResponse.setFirstName(savedUser.getFirstName());
@@ -70,6 +89,11 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public Boolean existByUserId(String userId) {
 		return userRepository.existsById(userId);
+	}
+
+	@Override
+	public Boolean existByKeycloakId(String keycloakId) {
+		return userRepository.existsByKeycloakId(keycloakId);
 	}
 
 }

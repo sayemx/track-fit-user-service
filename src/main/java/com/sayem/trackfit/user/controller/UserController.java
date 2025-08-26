@@ -38,11 +38,18 @@ public class UserController {
 				.body(userService.register(request));
 	}
 	
-	@GetMapping("/validate/{userId}")
-	public ResponseEntity<Boolean> validateUser(@PathVariable String userId) {
+	@GetMapping("/validateByuserId/{userId}")
+	public ResponseEntity<Boolean> validateUserByUserId(@PathVariable String userId) {
 		return ResponseEntity
 				.status(HttpStatus.OK)
 				.body(userService.existByUserId(userId));
+	}
+	
+	@GetMapping("/validateByKeycloakId/{keycloakId}")
+	public ResponseEntity<Boolean> validateUserByKeycloakId(@PathVariable String keycloakId) {
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.body(userService.existByKeycloakId(keycloakId));
 	}
 	
 	
