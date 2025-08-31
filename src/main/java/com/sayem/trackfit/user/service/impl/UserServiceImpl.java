@@ -1,14 +1,19 @@
 package com.sayem.trackfit.user.service.impl;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.sayem.trackfit.user.dto.RegisterRequest;
 import com.sayem.trackfit.user.dto.UserResponse;
 import com.sayem.trackfit.user.entity.User;
-import com.sayem.trackfit.user.exception.UserAlreadyExistsException;
 import com.sayem.trackfit.user.exception.UserNotFoundException;
 import com.sayem.trackfit.user.repository.UserRepository;
 import com.sayem.trackfit.user.service.UserService;
@@ -18,6 +23,17 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	UserRepository userRepository;
+	
+	private final WebClient webClient;
+    private final String keycloakBaseUrl = "http://localhost:8181"; // adjust
+    private final String realm = "trackfit-oauth2";
+    private final String clientId = "trackfit-admin-client";
+    private final String clientSecret = "HfcZ3xITIWI5AQLdXqReo4ekO1NKtkJW";
+    
+    
+    public UserServiceImpl(WebClient.Builder builder) {
+        this.webClient = builder.baseUrl(keycloakBaseUrl).build();
+    }
 
 	@Override
 	public UserResponse getUserprofile(String userId) {
@@ -95,5 +111,57 @@ public class UserServiceImpl implements UserService {
 	public Boolean existByKeycloakId(String keycloakId) {
 		return userRepository.existsByKeycloakId(keycloakId);
 	}
+
+	@Override
+	public void registerOnKeyCloak(RegisterRequest request) {
+		createUserWithPassword(request);
+	}
+	
+	 public String getAccessToken() {
+	        Map<String, String> form = new HashMap<>();
+	        form.put("client_id", clientId);
+	        form.put("client_secret", clientSecret);
+	        form.put("grant_type", "client_credentials");
+
+	        return webClient.post()
+	                .uri("/realms/" + realm + "/protocol/openid-connect/token")
+	                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+	                .body(BodyInserters.fromFormData("client_id", clientId)
+	                        .with("client_secret", clientSecret)
+	                        .with("grant_type", "client_credentials"))
+	                .retrieve()
+	                .bodyToMono(Map.class)
+	                .map(resp -> (String) resp.get("access_token"))
+	                .block(); // ⚠️ blocking for simplicity (can be reactive if needed)
+	 }
+	 
+	 public void createUserWithPassword(RegisterRequest request) {
+		    String token = getAccessToken();
+
+		    Map<String, Object> user = new HashMap<>();
+		    user.put("username", request.getEmail());
+		    user.put("enabled", true);
+		    user.put("email", request.getEmail());
+		    user.put("firstName", request.getFirstName());
+		    user.put("lastName", request.getLastName());
+
+		    Map<String, Object> credentials = new HashMap<>();
+		    credentials.put("type", "password");
+		    credentials.put("value", request.getPassword());
+		    credentials.put("temporary", false);
+
+		    user.put("credentials", java.util.List.of(credentials));
+
+		    webClient.post()
+		            .uri("/admin/realms/" + realm + "/users")
+		            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+		            .contentType(MediaType.APPLICATION_JSON)
+		            .bodyValue(user)
+		            .retrieve()
+		            .toBodilessEntity()
+		            .doOnSuccess(resp -> System.out.println("✅ User created with password, status: " + resp.getStatusCode()))
+		            .doOnError(err -> System.err.println("❌ Error creating user: " + err.getMessage()))
+		            .block();
+		}
 
 }

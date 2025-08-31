@@ -12,4 +12,6 @@ public interface UserService {
 	Boolean existByUserId(String userId);
 
 	Boolean existByKeycloakId(String keycloakId);
+	
+	void registerOnKeyCloak(RegisterRequest request);
 }

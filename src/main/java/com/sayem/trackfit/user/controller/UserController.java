@@ -52,5 +52,13 @@ public class UserController {
 				.body(userService.existByKeycloakId(keycloakId));
 	}
 	
+	@PostMapping("/register/keyCloak")
+	public ResponseEntity<Void> registerOnKeyCloak(@Valid @RequestBody RegisterRequest request) {
+		userService.registerOnKeyCloak(request);
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.build();
+	}
+	
 	
 }

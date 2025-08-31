@@ -1,5 +1,6 @@
 package com.sayem.trackfit.user.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -35,6 +36,8 @@ public class User {
 	private String firstName;
 	
 	private String lastName;
+	
+	private LocalDate birthDate;
 	
 	@Enumerated(EnumType.STRING)
 	private UserRole role = UserRole.USER;
